@@ -40,7 +40,7 @@ type Segment struct {
 
 func (s Segment) start() {
 	instruct(s.Foreword)
-	timer1 := time.NewTimer(time.Duration(s.Duration) * time.Second)
+	timer1 := time.NewTimer(time.Duration(s.Duration) * time.Minute)
 	<-timer1.C
 	countdown()
 }
