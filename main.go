@@ -38,9 +38,32 @@ func (s Segment) play() {
 	countdown()
 }
 
+type Tabata struct {
+	Foreword string
+	Count    int
+	RestTime int
+	WorkTime int
+}
+
+func (t Tabata) play() {
+	instruct(t.Foreword)
+	time.Sleep(10 * time.Second)
+	for i := 0; i < t.Count; i++ {
+		instruct("Start")
+		workTimer := time.NewTimer(time.Duration(t.WorkTime)*time.Second - 3)
+		<-workTimer.C
+		countdown()
+		instruct("Pihenő")
+		restTimer := time.NewTimer(time.Duration(t.RestTime)*time.Second - 3)
+		<-restTimer.C
+		countdown()
+	}
+}
+
 func main() {
 	Segment{Foreword: "Bemelegítés", Duration: 10}.play()
 	Segment{Foreword: "Feladatok", Duration: 40}.play()
+	//Tabata{Foreword: "Izometria", Count: 5, RestTime: 10, WorkTime: 20}.play()
 	Segment{Foreword: "Nyújtás", Duration: 10}.play()
 	instruct("Vége")
 }
