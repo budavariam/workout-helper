@@ -3,7 +3,10 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -26,12 +29,16 @@ func countdown() {
 	time.Sleep(1 * time.Second)
 }
 
+type Section interface {
+	start()
+}
+
 type Segment struct {
 	Duration int
 	Foreword string
 }
 
-func (s Segment) play() {
+func (s Segment) start() {
 	instruct(s.Foreword)
 	timer1 := time.NewTimer(time.Duration(s.Duration) * time.Second)
 	<-timer1.C
@@ -45,7 +52,7 @@ type Tabata struct {
 	WorkTime int
 }
 
-func (t Tabata) play() {
+func (t Tabata) start() {
 	instruct(t.Foreword)
 	time.Sleep(10 * time.Second)
 	for i := 0; i < t.Count; i++ {
@@ -60,10 +67,46 @@ func (t Tabata) play() {
 	}
 }
 
+func getMiddlePart() []Section {
+	result := []Section{Segment{Foreword: "Feladatok", Duration: 40}}
+	if len(os.Args) > 0 {
+		params := os.Args[1]
+		parts := strings.Split(params, " ")
+		result = []Section{}
+		for i, s := range parts {
+			sectionType := s[0]
+			if sectionType == 's' {
+				duration, err := strconv.Atoi(s[1:])
+				if err != nil {
+					log.Printf("Failed to parse duration. Err: %v", err)
+				}
+				result = append(result,
+					Segment{
+						Foreword: fmt.Sprintf("%d. feladatsor", i),
+						Duration: duration,
+					},
+				)
+			} else if sectionType == 't' {
+				result = append(result,
+					Tabata{
+						Foreword: fmt.Sprintf("Izometria"),
+						RestTime: 10,
+						WorkTime: 20,
+						Count:    5,
+					},
+				)
+			}
+		}
+	}
+	return result
+}
+
 func main() {
-	Segment{Foreword: "Bemelegítés", Duration: 10}.play()
-	Segment{Foreword: "Feladatok", Duration: 40}.play()
-	//Tabata{Foreword: "Izometria", Count: 5, RestTime: 10, WorkTime: 20}.play()
-	Segment{Foreword: "Nyújtás", Duration: 10}.play()
+	middlePart := getMiddlePart()
+	Segment{Foreword: "Bemelegítés", Duration: 10}.start()
+	for _, s := range middlePart {
+		s.start()
+	}
+	Segment{Foreword: "Nyújtás", Duration: 10}.start()
 	instruct("Vége")
 }
