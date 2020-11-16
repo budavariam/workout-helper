@@ -7,12 +7,23 @@ import (
 	"time"
 )
 
+func instruct(text string) {
+	log.Printf("Instruct START: %v", time.Now())
+	countdown := exec.Command("say", text)
+	err := countdown.Run()
+	if err != nil {
+		log.Printf("Failed to say: %s. Err: %v", text, err)
+	} else {
+		log.Printf("%s", text)
+	}
+	log.Printf("Instruct END: %v", time.Now())
+}
+
 func countdown() {
 	for i := 3; i > 0; i-- {
-		countdown := exec.Command("say", fmt.Sprintf("%d", i))
-		err := countdown.Run()
-		log.Printf("Failed to say number: %d. Err: %v", i, err)
+		instruct(fmt.Sprintf("%d", i))
 	}
+	time.Sleep(1 * time.Second)
 }
 
 type Segment struct {
@@ -20,17 +31,16 @@ type Segment struct {
 	Foreword string
 }
 
-func segment(segment Segment) {
-	foreword := exec.Command("say", segment.Foreword)
-	err := foreword.Run()
-	log.Printf("Error during segment foreword. Err: %v", err)
-	timer1 := time.NewTimer(time.Duration(segment.Duration) * time.Second)
+func (s Segment) play() {
+	instruct(s.Foreword)
+	timer1 := time.NewTimer(time.Duration(s.Duration) * time.Second)
 	<-timer1.C
 	countdown()
 }
 
 func main() {
-	segment(Segment{Foreword: "Bemelegítés", Duration: 10})
-	segment(Segment{Foreword: "Feladatok", Duration: 40})
-	segment(Segment{Foreword: "Nyújtás", Duration: 10})
+	Segment{Foreword: "Bemelegítés", Duration: 10}.play()
+	Segment{Foreword: "Feladatok", Duration: 40}.play()
+	Segment{Foreword: "Nyújtás", Duration: 10}.play()
+	instruct("Vége")
 }
