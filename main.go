@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -67,46 +68,90 @@ func (t Tabata) start() {
 	}
 }
 
-func getMiddlePart() []Section {
-	result := []Section{Segment{Foreword: "Feladatok", Duration: 40}}
-	if len(os.Args) > 0 {
-		params := os.Args[1]
-		parts := strings.Split(params, " ")
-		result = []Section{}
-		for i, s := range parts {
-			sectionType := s[0]
-			if sectionType == 's' {
-				duration, err := strconv.Atoi(s[1:])
-				if err != nil {
-					log.Printf("Failed to parse duration. Err: %v", err)
-				}
-				result = append(result,
-					Segment{
-						Foreword: fmt.Sprintf("%d. feladatsor", i),
-						Duration: duration,
-					},
-				)
-			} else if sectionType == 't' {
-				result = append(result,
-					Tabata{
-						Foreword: fmt.Sprintf("Izometria"),
-						RestTime: 10,
-						WorkTime: 20,
-						Count:    5,
-					},
-				)
+type WorkoutPlan struct {
+	sections []Section
+}
+
+func (wp *WorkoutPlan) validateParameters(text string) bool {
+	matched, err := regexp.Match(`^((s\d+|t ))+\s*$`, []byte(text+" "))
+	if err != nil {
+		log.Fatalf("Failed to validate parameters. Err: %v\n", err)
+	}
+	return matched
+}
+func (wp *WorkoutPlan) parseParameters(params string) []Section {
+	parts := strings.Split(params, " ")
+	result := []Section{}
+	for i, s := range parts {
+		sectionType := s[0]
+		if sectionType == 's' {
+			duration, err := strconv.Atoi(s[1:])
+			if err != nil {
+				log.Printf("Failed to parse duration. Err: %v\n", err)
+				duration = 10
 			}
+			result = append(result,
+				Segment{
+					Foreword: fmt.Sprintf("%d. feladatsor", i),
+					Duration: duration,
+				},
+			)
+		} else if sectionType == 't' {
+			result = append(result,
+				Tabata{
+					Foreword: fmt.Sprintf("Izometria"),
+					RestTime: 10,
+					WorkTime: 20,
+					Count:    5,
+				},
+			)
 		}
 	}
 	return result
 }
+func (wp *WorkoutPlan) init() {
+	middleTasks := []Section{Segment{Foreword: "Feladatok", Duration: 40}}
+	if len(os.Args) > 0 {
+		params := os.Args[1]
+		if !wp.validateParameters(params) {
+			log.Fatalf(`Invalid parameters provided. '%v'.
 
-func main() {
-	middlePart := getMiddlePart()
-	Segment{Foreword: "Bemelegítés", Duration: 10}.start()
-	for _, s := range middlePart {
+Tabata('t') and Segments ('s') sections can be defined as the first string parameter. These sections must be separated by a space character.
+
+Tabata:
+  not configurable. 
+Segments:
+  must provide the duration in minutes without any unit or space between. 
+			
+e.g: 't s10 s20':
+  0. Warmup
+  1. A Tabata session
+  2. 10 minutes for one task
+  3. 20 minutes for another task
+  Bonus: Stretching
+`,
+				os.Args[1])
+		}
+		middleTasks = wp.parseParameters(params)
+	}
+
+	wp.sections = []Section{
+		Segment{Foreword: "Bemelegítés", Duration: 10},
+	}
+	wp.sections = append(wp.sections, middleTasks...)
+	wp.sections = append(wp.sections, Segment{Foreword: "Nyújtás", Duration: 10})
+
+}
+
+func (wp *WorkoutPlan) start() {
+	for _, s := range wp.sections {
 		s.start()
 	}
-	Segment{Foreword: "Nyújtás", Duration: 10}.start()
+}
+
+func main() {
+	workout := WorkoutPlan{}
+	workout.init()
+	workout.start()
 	instruct("Vége")
 }
