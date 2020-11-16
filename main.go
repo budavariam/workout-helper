@@ -12,7 +12,6 @@ import (
 )
 
 func instruct(text string) {
-	log.Printf("Instruct START: %v", time.Now())
 	countdown := exec.Command("say", text)
 	err := countdown.Run()
 	if err != nil {
@@ -20,7 +19,6 @@ func instruct(text string) {
 	} else {
 		log.Printf("%s", text)
 	}
-	log.Printf("Instruct END: %v", time.Now())
 }
 
 func countdown() {
@@ -32,6 +30,7 @@ func countdown() {
 
 type Section interface {
 	start()
+	print()
 }
 
 type Segment struct {
@@ -44,6 +43,10 @@ func (s Segment) start() {
 	timer1 := time.NewTimer(time.Duration(s.Duration) * time.Minute)
 	<-timer1.C
 	countdown()
+}
+
+func (s Segment) print() {
+	fmt.Printf("%s (%d min)\n", s.Foreword, s.Duration)
 }
 
 type Tabata struct {
@@ -66,6 +69,10 @@ func (t Tabata) start() {
 		<-restTimer.C
 		countdown()
 	}
+}
+
+func (t Tabata) print() {
+	fmt.Printf("%s %d x ( %ds work + %ds rest )\n", t.Foreword, t.Count, t.WorkTime, t.RestTime)
 }
 
 type WorkoutPlan struct {
@@ -141,6 +148,11 @@ e.g: 't s10 s20':
 	wp.sections = append(wp.sections, middleTasks...)
 	wp.sections = append(wp.sections, Segment{Foreword: "Nyújtás", Duration: 10})
 
+	fmt.Printf("Workut Plan\n\n")
+	for _, s := range wp.sections {
+		s.print()
+	}
+	fmt.Printf("\n////////////\n\n")
 }
 
 func (wp *WorkoutPlan) start() {
