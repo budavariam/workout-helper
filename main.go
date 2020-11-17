@@ -109,7 +109,7 @@ func (wp *WorkoutPlan) parseParameters(params string) []Section {
 					Foreword: fmt.Sprintf("Izometria"),
 					RestTime: 10,
 					WorkTime: 20,
-					Count:    5,
+					Count:    10,
 				},
 			)
 		}
