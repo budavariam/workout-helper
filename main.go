@@ -80,7 +80,7 @@ type WorkoutPlan struct {
 }
 
 func (wp *WorkoutPlan) validateParameters(text string) bool {
-	matched, err := regexp.Match(`^((s\d+|t ))+\s*$`, []byte(text+" "))
+	matched, err := regexp.Match(`^((s\d+|t) )+\s*$`, []byte(text+" "))
 	if err != nil {
 		log.Fatalf("Failed to validate parameters. Err: %v\n", err)
 	}
