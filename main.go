@@ -100,7 +100,7 @@ func (wp *WorkoutPlan) parseParameters(params string) []Section {
 			}
 			result = append(result,
 				Segment{
-					Foreword: fmt.Sprintf("%d. feladatsor", i),
+					Foreword: fmt.Sprintf("%d. feladatsor", i+1),
 					Duration: duration,
 				},
 			)
@@ -110,7 +110,7 @@ func (wp *WorkoutPlan) parseParameters(params string) []Section {
 					Foreword: fmt.Sprintf("Izometria"),
 					RestTime: 10,
 					WorkTime: 20,
-					Count:    10,
+					Count:    8,
 				},
 			)
 		}
