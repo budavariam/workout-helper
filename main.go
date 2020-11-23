@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"os"
@@ -117,9 +118,14 @@ func (wp *WorkoutPlan) parseParameters(params string) []Section {
 	return result
 }
 func (wp *WorkoutPlan) init() {
+	skipWarmup := flag.Bool("skip-warmup", false, "Do not start the workout with warmup")
+	skipStretch := flag.Bool("skip-stretch", false, "Do not end the workout with warmup")
+	flag.Parse()
+
 	middleTasks := []Section{Segment{Foreword: "Feladatok", Duration: 40}}
-	if len(os.Args) > 0 {
-		params := os.Args[1]
+	args := flag.Args()
+	if len(args) > 0 {
+		params := args[0]
 		if !wp.validateParameters(params) {
 			log.Fatalf(`Invalid parameters provided. '%v'.
 
@@ -142,11 +148,14 @@ e.g: 't s10 s20':
 		middleTasks = wp.parseParameters(params)
 	}
 
-	wp.sections = []Section{
-		Segment{Foreword: "Bemelegítés", Duration: 10},
+	wp.sections = []Section{}
+	if !*skipWarmup {
+		wp.sections = append(wp.sections, Segment{Foreword: "Bemelegítés", Duration: 10})
 	}
 	wp.sections = append(wp.sections, middleTasks...)
-	wp.sections = append(wp.sections, Segment{Foreword: "Nyújtás", Duration: 10})
+	if !*skipStretch {
+		wp.sections = append(wp.sections, Segment{Foreword: "Nyújtás", Duration: 10})
+	}
 
 	fmt.Printf("Workut Plan\n\n")
 	for _, s := range wp.sections {

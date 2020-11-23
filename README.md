@@ -39,3 +39,7 @@ e.g: `'t s10 s20'` means:
 ```bash
 go run . 't s10 s20'
 ```
+
+You can skip warmup with `--skip-warmup` flag before the workout string.
+
+You can skip stretching with `--skip-stretch` flag before the workout string.
