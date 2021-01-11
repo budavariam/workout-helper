@@ -43,15 +43,16 @@ func countdown() {
 
 func countSeconds(seconds int) {
 	if seconds < 60 {
-		workTimer := time.NewTimer(time.Duration(seconds)*time.Second - 3)
+		workTimer := time.NewTimer(time.Duration(seconds-3) * time.Second)
 		<-workTimer.C
 		countdown()
 	} else {
-		timeUntilNotice := time.Duration(seconds)*time.Second - 60
+		timeUntilNotice := time.Duration(seconds-60) * time.Second
+		timeAfterNotice := time.Duration(60-3) * time.Second
 		workTimer := time.NewTimer(timeUntilNotice)
 		<-workTimer.C
 		instruct(text_last_minute)
-		workTimer = time.NewTimer(60 - 3)
+		workTimer = time.NewTimer(timeAfterNotice)
 		<-workTimer.C
 		countdown()
 	}
