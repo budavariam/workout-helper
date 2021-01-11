@@ -12,9 +12,21 @@ import (
 	"time"
 )
 
+const (
+	text_start       = "Start"
+	text_rest        = "Pihenő"
+	text_warmup      = "Bemelegítés"
+	text_stretch     = "Nyújtás"
+	text_tabata      = "Izometria"
+	text_tasks       = "Feladatok"
+	text_nth_task    = "%d. feladatsor"
+	text_last_minute = "1 perc"
+)
+
 func instruct(text string) {
-	countdown := exec.Command("say", text)
-	err := countdown.Run()
+	// Get the list of availlable voices with: 'say -v ?'
+	readText := exec.Command("say", "-v", "Mariska", text)
+	err := readText.Run()
 	if err != nil {
 		log.Printf("Failed to say: %s. Err: %v", text, err)
 	} else {
@@ -29,6 +41,22 @@ func countdown() {
 	time.Sleep(1 * time.Second)
 }
 
+func countSeconds(seconds int) {
+	if seconds < 60 {
+		workTimer := time.NewTimer(time.Duration(seconds)*time.Second - 3)
+		<-workTimer.C
+		countdown()
+	} else {
+		timeUntilNotice := time.Duration(seconds)*time.Second - 60
+		workTimer := time.NewTimer(timeUntilNotice)
+		<-workTimer.C
+		instruct(text_last_minute)
+		workTimer = time.NewTimer(60 - 3)
+		<-workTimer.C
+		countdown()
+	}
+}
+
 type Section interface {
 	start()
 	print()
@@ -41,9 +69,7 @@ type Segment struct {
 
 func (s Segment) start() {
 	instruct(s.Foreword)
-	timer1 := time.NewTimer(time.Duration(s.Duration) * time.Minute)
-	<-timer1.C
-	countdown()
+	countSeconds(s.Duration * 60)
 }
 
 func (s Segment) print() {
@@ -61,14 +87,10 @@ func (t Tabata) start() {
 	instruct(t.Foreword)
 	time.Sleep(10 * time.Second)
 	for i := 0; i < t.Count; i++ {
-		instruct("Start")
-		workTimer := time.NewTimer(time.Duration(t.WorkTime)*time.Second - 3)
-		<-workTimer.C
-		countdown()
-		instruct("Pihenő")
-		restTimer := time.NewTimer(time.Duration(t.RestTime)*time.Second - 3)
-		<-restTimer.C
-		countdown()
+		instruct(text_start)
+		countSeconds(t.WorkTime)
+		instruct(text_rest)
+		countSeconds(t.RestTime)
 	}
 }
 
@@ -100,14 +122,14 @@ func (wp *WorkoutPlan) parseParameters(params string) []Section {
 			}
 			result = append(result,
 				Segment{
-					Foreword: fmt.Sprintf("%d. feladatsor", i+1),
+					Foreword: fmt.Sprintf(text_nth_task, i+1),
 					Duration: duration,
 				},
 			)
 		} else if sectionType == 't' {
 			result = append(result,
 				Tabata{
-					Foreword: fmt.Sprintf("Izometria"),
+					Foreword: fmt.Sprintf(text_tabata),
 					RestTime: 10,
 					WorkTime: 20,
 					Count:    8,
@@ -122,7 +144,7 @@ func (wp *WorkoutPlan) init() {
 	skipStretch := flag.Bool("skip-stretch", false, "Do not end the workout with warmup")
 	flag.Parse()
 
-	middleTasks := []Section{Segment{Foreword: "Feladatok", Duration: 40}}
+	middleTasks := []Section{Segment{Foreword: text_tasks, Duration: 40}}
 	args := flag.Args()
 	if len(args) > 0 {
 		params := args[0]
@@ -150,11 +172,11 @@ e.g: 't s10 s20':
 
 	wp.sections = []Section{}
 	if !*skipWarmup {
-		wp.sections = append(wp.sections, Segment{Foreword: "Bemelegítés", Duration: 10})
+		wp.sections = append(wp.sections, Segment{Foreword: text_warmup, Duration: 10})
 	}
 	wp.sections = append(wp.sections, middleTasks...)
 	if !*skipStretch {
-		wp.sections = append(wp.sections, Segment{Foreword: "Nyújtás", Duration: 10})
+		wp.sections = append(wp.sections, Segment{Foreword: text_stretch, Duration: 10})
 	}
 
 	fmt.Printf("Workut Plan\n\n")
